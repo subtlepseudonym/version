@@ -8,7 +8,6 @@ import (
 
 	"github.com/Masterminds/semver"
 	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 type Method uint
@@ -21,11 +20,11 @@ const (
 func Latest(method Method, path string) (string, error) {
 	switch method {
 	case GitBinary:
-		return latestTag_gibinary(path)
+		return latestTag_gitbinary(path)
 	case GoGit:
 		return latestTag_gogit(path)
 	default:
-		return nil, fmt.Errorf("invalid method: %d", method)
+		return "", fmt.Errorf("invalid method: %d", method)
 	}
 }
 
@@ -104,21 +103,21 @@ func latestTag_gitbinary(path string) (string, error) {
 func latestTag_gogit(path string) (string, error) {
 	repo, err := git.PlainOpen(path)
 	if err != nil {
-		return nil, fmt.Errorf("open git repo: %w", err)
+		return "", fmt.Errorf("open git repo: %w", err)
 	}
 
 	head, err := repo.Head()
 	if err != nil {
-		return nil, fmt.Errorf("get HEAD ref: %v", err)
+		return "", fmt.Errorf("get HEAD ref: %v", err)
 	}
 	headCommit, err := repo.CommitObject(head.Hash())
 	if err != nil {
-		return nil, fmt.Errorf("get HEAD commit: %v", err)
+		return "", fmt.Errorf("get HEAD commit: %v", err)
 	}
 
 	tagIter, err := repo.TagObjects()
 	if err != nil {
-		return nil, fmt.Errorf("get tag objects: %w", err)
+		return "", fmt.Errorf("get tag objects: %w", err)
 	}
 
 	var ver *semver.Version
@@ -146,12 +145,12 @@ func latestTag_gogit(path string) (string, error) {
 		}
 	}
 	if err != nil && err != io.EOF {
-		return nil, fmt.Errorf("get next tag: %w", err)
+		return "", fmt.Errorf("get next tag: %w", err)
 	}
 
 	if ver == nil {
-		return nil, fmt.Errorf("no parseable tag found")
+		return "", fmt.Errorf("no parseable tag found")
 	}
 
-	return ver, nil
+	return ver.String(), nil
 }
